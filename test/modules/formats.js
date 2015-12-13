@@ -115,6 +115,11 @@
     });
 
     // ----------
+    asyncTest('IIIF 2.0 JSON, sizes array only', function() {
+        testOpenUrl('iiif_2_0_sizes/info.json');
+    });
+
+    // ----------
     asyncTest('IIIF 2.0 JSON String', function() {
         testOpen(
             '{' +
