@@ -36,7 +36,7 @@
 
 /**
  * @class IIIFTileSource
- * @classdesc A client implementation of the International Image Interoperability
+ * @classdesc A client implementation of the International Image Interoperability Framework
  * Format: Image API 1.0 - 2.0
  *
  * @memberof OpenSeadragon
@@ -83,7 +83,7 @@ $.IIIFTileSource = function( options ){
                 }
             }
         }
-    } else if ( canBeTiled(this) ) {
+    } else if ( canBeTiled(options.profile) ) {
         // use the largest of tileOptions that is smaller than the short dimension
         var shortDim = Math.min( this.height, this.width ),
             tileOptions = [256,512,1024],
@@ -102,10 +102,11 @@ $.IIIFTileSource = function( options ){
             options.tileSize = shortDim;
         }
     } else if (this.sizes && this.sizes.length > 0){
-        // This info.json can't be tiled, but we can still construct a legacy pyramid form the sizes array
+        // This info.json can't be tiled, but we can still construct a legacy pyramid from the sizes array
         this.emulateLegacyImagePyramid = true;
         options.levels = constructLevels( this );
 
+        // use the largest available size to define tiles
         $.extend( true, options, {
             width: options.levels[ options.levels.length - 1 ].width,
             height: options.levels[ options.levels.length - 1 ].height,
@@ -209,15 +210,19 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
      */
     getTileWidth: function( level ) {
 
+        $.console.log('getTileWidth(level = ' + level + ')');
         if(this.emulateLegacyImagePyramid) {
+            $.console.log($.TileSource.prototype.getTileWidth.call(this, level));
             return $.TileSource.prototype.getTileWidth.call(this, level);
         }
 
         var scaleFactor = Math.pow(2, this.maxLevel - level);
 
         if (this.tileSizePerScaleFactor && this.tileSizePerScaleFactor[scaleFactor]) {
+            $.console.log(this.tileSizePerScaleFactor[scaleFactor].width);
             return this.tileSizePerScaleFactor[scaleFactor].width;
         }
+        $.console.log(this._tileWidth);
         return this._tileWidth;
     },
 
@@ -228,6 +233,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
      */
     getTileHeight: function( level ) {
 
+        $.console.log('getTileHeight(level = ' + level + ')');
         if(this.emulateLegacyImagePyramid) {
             return $.TileSource.prototype.getTileHeight.call(this, level);
         }
@@ -246,6 +252,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
      */
     getLevelScale: function ( level ) {
 
+        $.console.log('getLevelScale(level = ' + level + ')');
         if(this.emulateLegacyImagePyramid) {
             var levelScale = NaN;
             if (this.levels.length > 0 && level >= this.minLevel && level <= this.maxLevel) {
@@ -253,6 +260,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
                     this.levels[level].width /
                     this.levels[this.maxLevel].width;
             }
+            $.console.log(levelScale);
             return levelScale;
         }
 
@@ -265,6 +273,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
      */
     getNumTiles: function( level ) {
 
+        $.console.log('getNumTiles(level = ' + level + ')');
         if(this.emulateLegacyImagePyramid) {
             var scale = this.getLevelScale(level);
             if (scale) {
@@ -304,6 +313,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
      */
     getTileUrl: function( level, x, y ){
 
+        $.console.log('getTileUrl(level = ' + level + ', x = ' + x + ', y = ' + y + ')');
         if(this.emulateLegacyImagePyramid) {
             var url = null;
             if ( this.levels.length > 0 && level >= this.minLevel && level <= this.maxLevel ) {
@@ -366,10 +376,22 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
 
   });
 
-    function canBeTiled (options ) {
-        return !(options.profile[0] === "http://iiif.io/api/image/2/level0.json" && options.profile.indexOf("sizeByW") == -1);
+    /**
+     * Determine whether arbitrary tile requests can be made against a service with the given profile
+     * @function
+     * @param {object} profile - IIIF profile object
+     * @throws {Error}
+     */
+    function canBeTiled (profile ) {
+        return !(profile[0] === "http://iiif.io/api/image/2/level0.json" && profile.indexOf("sizeByW") == -1);
     }
 
+    /**
+     * Build the legacy pyramid URLs (one tile per level)
+     * @function
+     * @param {object} options - infoJson
+     * @throws {Error}
+     */
     function constructLevels(options) {
         var levels = [];
         for(var i=0; i<options.sizes.length; i++) {
@@ -379,7 +401,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
                 height: options.sizes[i].height
             });
         }
-        return levels;
+        return levels.sort(function(a,b){return a.width - b.width;});
     }
 
 
