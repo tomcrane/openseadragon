@@ -297,7 +297,7 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
 
 
     /**
-     * Responsible for retreiving the url which will return an image for the
+     * Responsible for retrieving the url which will return an image for the
      * region specified by the given x, y, and level components.
      * @function
      * @param {Number} level - z index
@@ -376,7 +376,13 @@ $.extend( $.IIIFTileSource.prototype, $.TileSource.prototype, /** @lends OpenSea
      * @throws {Error}
      */
     function canBeTiled (profile ) {
-        return !(profile[0] === "http://iiif.io/api/image/2/level0.json" && profile.indexOf("sizeByW") == -1);
+        var level0Profiles = [
+            "http://library.stanford.edu/iiif/image-api/compliance.html#level0",
+            "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level0",
+            "http://iiif.io/api/image/2/level0.json"
+        ];
+        var isLevel0 = (level0Profiles.indexOf(profile[0]) != -1);
+        return !isLevel0 || (profile.indexOf("sizeByW") != -1);
     }
 
     /**
